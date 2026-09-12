@@ -1,1 +1,57 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Gamble.io</title><style>body{font-family:system-ui;background:#08101e;color:#eef4ff;margin:0}.auth{min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle,#563050,#07101e 70%)}.box{width:min(420px,90vw);padding:28px;border-radius:18px;background:#101e34;border:1px solid #ffffff33}.box h1{color:#ffd35d}.tabs{display:flex;gap:8px;margin:14px 0}.tabs button{flex:1}.tabon{background:#ffd35d!important;color:#1d1200!important}input{width:100%;box-sizing:border-box;margin:7px 0;padding:11px;border-radius:8px;border:1px solid #496080;background:#07111e;color:#fff}button{padding:10px 14px;border:0;border-radius:8px;font-weight:700;cursor:pointer}.gold{background:#ffd35d;color:#1d1200}.muted{color:#afbed5;font-size:13px}#msg{min-height:23px;color:#ffb1bb}header{display:flex;gap:14px;align-items:center;padding:12px 4vw;background:#09111e}.brand{font-size:24px;font-weight:900}.brand span{color:#ffd35d}.balance{margin-left:auto;color:#ffd35d}nav button{background:transparent;color:#dce7f8}.hero,.panel{margin:18px auto;max-width:1100px;padding:20px;border-radius:15px;background:#13233d}.grid{max-width:1100px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:0 18px 30px}.game{height:125px;background:#182c4c;color:#fff;text-align:left}.icon{font-size:27px;display:block}.panel{max-width:700px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.felt{background:#08734f;min-height:450px;border:14px solid #69401f}.slots{font-size:58px;background:#050a10;padding:15px;width:max-content}.spin{animation:shake .1s linear infinite}@keyframes shake{50%{transform:translateY(-9px)}}.track{background:#b68040;padding:15px}.horse{background:#f1d4a4;color:#3b2514;margin:9px;padding:8px;width:130px;transition:transform 1.2s}.wheel{width:270px;height:270px;border-radius:50%;border:9px solid #ffd35d;background:conic-gradient(#ef476f 0 45deg,#118ab2 45deg 90deg,#06d6a0 90deg 135deg,#ffd166 135deg 180deg,#9b5de5 180deg 225deg,#f15bb5 225deg 270deg,#00bbf9 270deg 315deg,#90be6d 315deg);margin:20px;transition:transform 3.5s cubic-bezier(.12,.8,.18,1)}.pin{font-size:35px;color:#ffd35d}.lane{height:320px;background:linear-gradient(90deg,#9a6939,#e2b878,#9a6939);position:relative;overflow:hidden}.ball{position:absolute;bottom:15px;left:48%;font-size:40px;transition:left .12s, bottom 1.8s}.pins{position:absolute;top:22px;left:42%;font-size:30px}.shop{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.item{background:#1d3153;color:#fff;border:2px solid var(--c);text-align:left}.owned{outline:2px solid #fff}@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.shop{grid-template-columns:repeat(2,1fr)}}</style></head><body><section id="auth" class="auth"><main class="box"><h1>Gamble.io</h1><p>Virtual chip casino arcade</p><div class="tabs"><button id="loginTab" class="tabon">Sign in</button><button id="createTab">Create account</button></div><input id="user" placeholder="Username (new account only)"><input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Password (6+ characters)"><button id="submit" class="gold">Sign in</button><button id="guest">Play as guest</button><p id="msg"></p><p class="muted">Accounts save chips and cosmetics. Guest play saves only in this browser.</p></main></section><section id="app" hidden><header><div class="brand">GAMBLE<span>.IO</span></div><div class="balance">◈ <b id="chips">10,000</b></div><nav><button data-v="lobby">Games</button><button data-v="shop">Shop</button><button data-v="leaders">Leaders</button><button data-v="terminal">Terminal</button><button id="signout">Sign out</button></nav></header><main id="view"></main></section><script type="module">import{initializeApp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';import{getFirestore,doc,getDoc,setDoc,collection,query,orderBy,limit,getDocs,serverTimestamp}from'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';const config={apiKey:'AIzaSyBwvxO2FJIiSGll_4xdXjv_UIKK4U02-Zc',authDomain:'gamble-io.firebaseapp.com',projectId:'gamble-io',storageBucket:'gamble-io.firebasestorage.app',messagingSenderId:'191214216573',appId:'1:191214216573:web:63f6f15a8987061da99814'};const fb=initializeApp(config),A=getAuth(fb),D=getFirestore(fb),$=s=>document.querySelector(s),V=$('#view');let create=false,U=null,P={chips:+(localStorage.gchips||10000),name:'Guest',theme:'Classic',owned:['Classic'],codes:[]};const G=['Dice Duel','Blackjack','Slots','Horse Races','Roulette','Coin Flip','Hi-Lo','Gem Drop','Mystery Box','Lucky 7','Poker Draw','Bowling','Rocket Run','Wheel Spin','Fishing Luck','Free Throw','Baccarat','Plinko','Star Match','Royal Vault'];const I=['🎲','🃏','🎰','🏇','🎡','🪙','🎯','💎','🎁','🍀','🃏','🎳','🚀','🎪','🐟','🏀','🎴','🔴','⭐','👑'];function up(){P.chips=Math.max(0,Math.floor(P.chips));$('#chips').textContent=P.chips.toLocaleString();localStorage.gchips=P.chips}async function save(d=0){P.chips+=d;up();if(U)await setDoc(doc(D,'users',U.uid),{chips:P.chips,name:P.name,theme:P.theme,owned:P.owned,codes:P.codes,updatedAt:serverTimestamp()},{merge:true})}function open(){$('#auth').hidden=true;$('#app').hidden=false;up();lobby()}function err(e){$('#msg').textContent=e?.message?.replace('Firebase: ','')||e}$('#loginTab').onclick=()=>{create=false;$('#loginTab').className='tabon';$('#createTab').className='';$('#submit').textContent='Sign in';$('#user').style.display='none'};$('#createTab').onclick=()=>{create=true;$('#createTab').className='tabon';$('#loginTab').className='';$('#submit').textContent='Create account';$('#user').style.display='block'};$('#loginTab').click();$('#submit').onclick=async()=>{let e=$('#email').value.trim(),p=$('#pass').value,n=$('#user').value.trim();if(!e||!p)return err('Enter email and password.');try{if(create){if(!n)return err('Enter a username.');let r=await createUserWithEmailAndPassword(A,e,p);U=r.user;P.name=n;await save(0)}else await signInWithEmailAndPassword(A,e,p)}catch(x){err(x)}};$('#guest').onclick=()=>{U=null;P.name='Guest';open()};$('#signout').onclick=async()=>{if(U)await signOut(A);location.reload()};onAuthStateChanged(A,async u=>{if(!u)return;U=u;let x=await getDoc(doc(D,u.uid));if(x.exists())P={...P,...x.data()};else await save(0);open()});document.addEventListener('click',e=>{let b=e.target.closest('[data-v]');if(b)({lobby,shop,leaders,terminal}[b.dataset.v])()});function panel(t,h){V.innerHTML='<section class="panel"><button id="back">← Games</button><h2>'+t+'</h2>'+h+'</section>';$('#back').onclick=lobby}function wager(){return'<input id="bet" type="number" value="100" min="1" placeholder="Wager">'}function b(){let x=+$('#bet').value;return Number.isInteger(x)&&x>0&&x<=P.chips?x:0}function lobby(){V.innerHTML='<section class="hero"><h2>Welcome, '+P.name+'</h2><p>Each table has its own animation. Virtual chips only.</p></section><section class="grid">'+G.map((x,i)=>'<button class="game" data-g="'+i+'"><span class="icon">'+I[i]+'</span><b>'+x+'</b><small>Play</small></button>').join('')+'</section>';document.querySelectorAll('[data-g]').forEach(x=>x.onclick=()=>game(+x.dataset.g))}function game(i){let n=G[i];if(n==='Slots')return slots();if(n==='Horse Races')return races();if(n==='Wheel Spin')return wheel();if(n==='Bowling')return bowling();if(n==='Dice Duel')return dice();if(n==='Blackjack')return blackjack();panel(I[i]+' '+n,wager()+' <button id="go" class="gold">Start animation</button><p id="r">Animated mini-game staging area.</p>');$('#go').onclick=async()=>{let x=b();if(!x)return;await save(Math.random()<.46?x:-x);$('#r').textContent='Round complete.'}}function dice(){panel('🎲 Dice Duel',wager()+' <button id="roll" class="gold">Roll Dice</button><h1 id="die">🎲</h1><p id="r"></p>');$('#roll').onclick=async()=>{let x=b();if(!x)return;let d=$('#die'),k=0,t=setInterval(()=>{d.textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][Math.random()*6|0];k++},90);setTimeout(async()=>{clearInterval(t);let r=1+(Math.random()*6|0);d.textContent=['⚀','⚁','⚂','⚃','⚄','⚅'][r-1];let w=r>=4;await save(w?x:-x);$('#r').textContent='Rolled '+r+'. '+(w?'Win!':'Loss.')},900)}}function slots(){panel('🎰 Slots',wager()+' <button id="go" class="gold">Spin</button><div id="s" class="slots"><span>🍒</span><span>🔔</span><span>💎</span></div><p id="r"></p>');$('#go').onclick=()=>{let x=b();if(!x)return;let q=$('#s'),a=['🍒','🍋','🔔','💎','7️⃣'];q.classList.add('spin');let t=setInterval(()=>q.querySelectorAll('span').forEach(z=>z.textContent=a[Math.random()*5|0]),70);setTimeout(async()=>{clearInterval(t);q.classList.remove('spin');let z=[a[Math.random()*5|0],a[Math.random()*5|0],a[Math.random()*5|0]];q.querySelectorAll('span').forEach((e,i)=>e.textContent=z[i]);let w=z[0]===z[1]||z[1]===z[2]||z[0]===z[2];await save(w?x:-x);$('#r').textContent=w?'Match! You win.':'No match.'},1000)}}function races(){panel('🏇 Horse Races',wager()+' <button id="go" class="gold">Start race</button><div class="track">'+[1,2,3,4].map(x=>'<div class="horse" id="h'+x+'">🏇 Horse '+x+'</div>').join('')+'</div><p id="r"></p>');$('#go').onclick=()=>{let x=b();if(!x)return;let w=1+(Math.random()*4|0);[1,2,3,4].forEach(i=>$('#h'+i).style.transform='translateX('+(i===w?360:Math.random()*180)+'px)');setTimeout(async()=>{await save(w===1?x*2:-x);$('#r').textContent='Horse '+w+' wins. You bet Horse 1.'},1300)}}function wheel(){panel('🎪 Wheel Spin',wager()+' <button id="go" class="gold">Spin wheel</button><div class="pin">▼</div><div id="w" class="wheel"></div><p id="r"></p>');$('#go').onclick=()=>{let x=b();if(!x)return;let deg=1440+(Math.random()*1440|0),w=$('#w');w.style.transform='rotate('+deg+'deg)';setTimeout(async()=>{let mult=[0,1,2,3][Math.random()*4|0];await save(mult?x*mult:-x);$('#r').textContent=mult?'Wheel prize: '+mult+'×!':'Wheel landed on 0×.'},3600)}}function bowling(){panel('🎳 Bowling',wager()+' <button id="roll" class="gold">Roll (Space)</button><p>Use ← and → to 
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gamble.io Test</title>
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #08101e;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(420px, 90vw);
+      padding: 32px;
+      text-align: center;
+      background: #13233d;
+      border: 1px solid #3c5375;
+      border-radius: 18px;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 14px 22px;
+      border: 0;
+      border-radius: 10px;
+      background: #ffd35d;
+      color: #201500;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>Gamble.io Button Test</h1>
+    <p id="status">If the button works, this text changes.</p>
+    <button id="testButton">Test Button</button>
+  </main>
+
+  <script>
+    document.getElementById("testButton").addEventListener("click", function () {
+      document.getElementById("status").textContent =
+        "It worked. GitHub Pages and button clicks are fine.";
+      document.body.style.background = "#0b6248";
+    });
+  </script>
+</body>
+</html>
